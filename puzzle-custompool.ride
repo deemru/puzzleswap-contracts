@@ -496,8 +496,9 @@ func swap(assetOut: String, minimum: Int) = {
     let creatorFee = fraction(feeAmountOut, 1, 10)
     let protocolFee = fraction(feeAmountOut, 4, 10)
     strict stakingTopUp = if (feeAssetOut == usdnAssetId) then {
-      reentrantInvoke(Address(base58'3PFTbywqxtFfukX3HyT881g4iW5K4QL3FAS'), "topUpReward", [], [AttachedPayment(feeAssetOut, protocolFee)])
-    } else {unit}
+      strict topUpReward = reentrantInvoke(Address(base58'3PFTbywqxtFfukX3HyT881g4iW5K4QL3FAS'), "topUpReward", [], [AttachedPayment(feeAssetOut, protocolFee)])
+      []
+    } else [Burn(feeAssetOut, protocolFee)]
 
     # prepare state changes
     let assetInChange = [IntegerEntry("global_"+AssetIn.getAssetString()+"_balance", newBalanceIn)]
@@ -518,7 +519,7 @@ func swap(assetOut: String, minimum: Int) = {
 
         # update volume stats
         IntegerEntry("global_volume", tryGetInteger("global_volume") + calculateUsdnValue(AssetIn, AmountIn, AssetInBalance, feeAssetOutBalance))
-      ] ++ (if (stakingTopUp == unit) then {[Burn(feeAssetOut, protocolFee)]} else {[]}), 
+      ] ++ stakingTopUp, 
       AmountOut
     )
 }
